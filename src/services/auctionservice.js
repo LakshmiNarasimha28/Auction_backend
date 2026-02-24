@@ -1,7 +1,20 @@
 import Auction from "../models/auction.js";
+import Category from "../models/category.js";
+import { updateCategoryAuctionCount } from "./categoryservice.js";
 import mongoose from "mongoose";
 
 export const createAuction = async (data, userId) => {
+  // Validate category exists and is active
+  if (data.category) {
+    const category = await Category.findById(data.category);
+    if (!category) {
+      throw new Error("Category not found");
+    }
+    if (!category.isActive) {
+      throw new Error("Selected category is not active");
+    }
+  }
+
   // Validate end time is in the future
   if (new Date(data.endTime) <= new Date()) {
     throw new Error("End time must be in the future");
@@ -12,63 +25,35 @@ export const createAuction = async (data, userId) => {
     throw new Error("Starting price must be greater than 0");
   }
 
-  return await Auction.create({
+  const auction = await Auction.create({
     ...data,
     owner: userId,
     currentHighestBid: data.startingPrice,
     bidders: []
   });
+
+  // Update category auction count
+  if (auction.category) {
+    await updateCategoryAuctionCount(auction.category);
+  }
+
+  return auction;
 };
-
-// export const getAllAuctions = async (filters = {}, options = {}) => {
-//   const { status, category, owner, search } = filters;
-//   const { page = 1, limit = 10, sort = "-createdAt" } = options;
-
-//   const query = {};
-
-//   // Apply filters
-//   if (status) query.status = status;
-//   if (category) query.category = category;
-//   if (owner) query.owner = owner;
-//   if (search) {
-//     query.$or = [
-//       { title: { $regex: search, $options: "i" } },
-//       { description: { $regex: search, $options: "i" } }
-//     ];
-//   }
-
-//   const skip = (page - 1) * limit;
-
-//   const [auctions, total] = await Promise.all([
-//     Auction.find(query)
-//       .populate("owner", "name email")
-//       .populate("currentHighestBidder", "name")
-//       .sort(sort)
-//       .skip(skip)
-//       .limit(parseInt(limit)),
-//     Auction.countDocuments(query)
-//   ]);
-
-//   return {
-//     auctions,
-//     pagination: {
-//       total,
-//       page: parseInt(page),
-//       pages: Math.ceil(total / limit),
-//       limit: parseInt(limit)
-//     }
-//   };
-// };
 
 export const getAllAuctions = async (
   page = 1,
   limit = 10,
   status,
-  search
+  search,
+  category
 ) => {
+  page = parseInt(page);
+  limit = parseInt(limit);
+  
   const query = {};
 
   if (status) query.status = status;
+  if (category) query.category = category;
 
   if (search) {
     query.$or = [
@@ -77,10 +62,30 @@ export const getAllAuctions = async (
     ];
   }
 
-  return await Auction.find(query)
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .populate("owner", "name email");
+  const skip = (page - 1) * limit;
+
+  // Execute queries in parallel for better performance
+  const [auctions, total] = await Promise.all([
+    Auction.find(query)
+      .skip(skip)
+      .limit(limit)
+      .populate("owner", "name email")
+      .populate("category", "name slug icon color")
+      .sort({ createdAt: -1 }),
+    Auction.countDocuments(query)
+  ]);
+
+  return {
+    auctions,
+    pagination: {
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      limit,
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1
+    }
+  };
 };
 
 export const getAuctionById = async (id) => {
@@ -90,6 +95,7 @@ export const getAuctionById = async (id) => {
 
   const auction = await Auction.findById(id)
     .populate("owner", "name email")
+    .populate("category", "name slug description icon color")
     .populate("currentHighestBidder", "name")
     .populate("bidders.user", "name");
 
@@ -154,7 +160,13 @@ export const deleteAuction = async (id, userId) => {
     throw new Error("Cannot delete auction with existing bids. Cancel it instead.");
   }
 
+  const categoryId = auction.category;
   await auction.deleteOne();
+
+  // Update category auction count
+  if (categoryId) {
+    await updateCategoryAuctionCount(categoryId);
+  }
 };
 
 export const cancelAuction = async (id, userId) => {
@@ -175,7 +187,14 @@ export const cancelAuction = async (id, userId) => {
   }
 
   auction.status = "cancelled";
-  return await auction.save();
+  await auction.save();
+
+  // Update category auction count
+  if (auction.category) {
+    await updateCategoryAuctionCount(auction.category);
+  }
+
+  return auction;
 };
 
 export const closeExpiredAuctions = async () => {
@@ -192,5 +211,12 @@ export const closeAuction = async (id, userId) => {
   if (!auction) throw new Error("Auction not found");
 
   auction.status = "closed";
-  return await auction.save();
+  await auction.save();
+
+  // Update category auction count
+  if (auction.category) {
+    await updateCategoryAuctionCount(auction.category);
+  }
+
+  return auction;
 };

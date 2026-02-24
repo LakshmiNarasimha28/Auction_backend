@@ -26,9 +26,8 @@ const auctionValidation = [
     .notEmpty().withMessage("Description is required")
     .isLength({ max: 1000 }).withMessage("Description cannot exceed 1000 characters"),
   body("category")
-    .optional()
-    .isIn(["Electronics", "Fashion", "Home", "Sports", "Art", "Collectibles", "Other"])
-    .withMessage("Invalid category"),
+    .notEmpty().withMessage("Category is required")
+    .isMongoId().withMessage("Invalid category ID"),
   body("images")
     .optional()
     .isArray().withMessage("Images must be an array")
@@ -63,8 +62,7 @@ const updateAuctionValidation = [
     .isLength({ max: 1000 }).withMessage("Description cannot exceed 1000 characters"),
   body("category")
     .optional()
-    .isIn(["Electronics", "Fashion", "Home", "Sports", "Art", "Collectibles", "Other"])
-    .withMessage("Invalid category"),
+    .isMongoId().withMessage("Invalid category ID"),
   body("images")
     .optional()
     .isArray().withMessage("Images must be an array")
@@ -96,6 +94,9 @@ const getAuctionsValidation = [
   query("status")
     .optional()
     .isIn(["active", "closed", "cancelled"]).withMessage("Invalid status"),
+  query("category")
+    .optional()
+    .isMongoId().withMessage("Invalid category ID"),
   query("search")
     .optional()
     .trim()

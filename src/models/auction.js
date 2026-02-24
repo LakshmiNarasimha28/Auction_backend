@@ -16,10 +16,9 @@ const auctionSchema = new mongoose.Schema(
     },
 
     category: {
-      type: String,
-      required: [true, "Category is required"],
-      enum: ["Electronics", "Fashion", "Home", "Sports", "Art", "Collectibles", "Other"],
-      default: "Other"
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true
     },
 
     images: [{

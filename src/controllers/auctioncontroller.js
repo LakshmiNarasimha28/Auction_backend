@@ -46,14 +46,15 @@ export const getAuctionsController = async (req, res) => {
       });
     }
 
-    const { page, limit, status, search } = req.query;
+    const { page, limit, status, search, category } = req.query;
 
-    const auctions = await getAllAuctions(page, limit, status, search);
+    const result = await getAllAuctions(page, limit, status, search, category);
 
     res.status(200).json({
       success: true,
       message: "Auctions retrieved successfully",
-      data: auctions
+      data: result.auctions,
+      pagination: result.pagination
     });
   } catch (error) {
     res.status(500).json({

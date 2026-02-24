@@ -26,7 +26,14 @@ export const placeBid = async (auctionId, amount, userId) => {
     auction: auctionId
   });
 
+  // Update auction with new bid information
   auction.currentHighestBid = amount;
+  auction.currentHighestBidder = userId;
+  auction.bidders.push({
+    user: userId,
+    amount: amount,
+    bidTime: new Date()
+  });
   await auction.save();
 
   return bid;

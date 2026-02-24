@@ -99,6 +99,7 @@ auctionSchema.index({ status: 1, endTime: 1 });
 auctionSchema.index({ owner: 1 });
 auctionSchema.index({ category: 1 });
 auctionSchema.index({ createdAt: -1 });
+auctionSchema.index({ title: "text", description: "text" }); // Text index for search
 
 // Virtual for checking if auction is expired
 auctionSchema.virtual("isExpired").get(function() {
@@ -111,11 +112,10 @@ auctionSchema.virtual("totalBids").get(function() {
 });
 
 // Pre-save middleware to auto-close expired auctions
-auctionSchema.pre("save", function(next) {
+auctionSchema.pre("save", function() {
   if (this.endTime < new Date() && this.status === "active") {
     this.status = "closed";
   }
-  next();
 });
 
 export default mongoose.model("Auction", auctionSchema);

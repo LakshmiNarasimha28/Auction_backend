@@ -20,16 +20,56 @@ export const createAuction = async (data, userId) => {
   });
 };
 
-export const getAllAuctions = async (filters = {}, options = {}) => {
-  const { status, category, owner, search } = filters;
-  const { page = 1, limit = 10, sort = "-createdAt" } = options;
+// export const getAllAuctions = async (filters = {}, options = {}) => {
+//   const { status, category, owner, search } = filters;
+//   const { page = 1, limit = 10, sort = "-createdAt" } = options;
 
+//   const query = {};
+
+//   // Apply filters
+//   if (status) query.status = status;
+//   if (category) query.category = category;
+//   if (owner) query.owner = owner;
+//   if (search) {
+//     query.$or = [
+//       { title: { $regex: search, $options: "i" } },
+//       { description: { $regex: search, $options: "i" } }
+//     ];
+//   }
+
+//   const skip = (page - 1) * limit;
+
+//   const [auctions, total] = await Promise.all([
+//     Auction.find(query)
+//       .populate("owner", "name email")
+//       .populate("currentHighestBidder", "name")
+//       .sort(sort)
+//       .skip(skip)
+//       .limit(parseInt(limit)),
+//     Auction.countDocuments(query)
+//   ]);
+
+//   return {
+//     auctions,
+//     pagination: {
+//       total,
+//       page: parseInt(page),
+//       pages: Math.ceil(total / limit),
+//       limit: parseInt(limit)
+//     }
+//   };
+// };
+
+export const getAllAuctions = async (
+  page = 1,
+  limit = 10,
+  status,
+  search
+) => {
   const query = {};
 
-  // Apply filters
   if (status) query.status = status;
-  if (category) query.category = category;
-  if (owner) query.owner = owner;
+
   if (search) {
     query.$or = [
       { title: { $regex: search, $options: "i" } },
@@ -37,27 +77,10 @@ export const getAllAuctions = async (filters = {}, options = {}) => {
     ];
   }
 
-  const skip = (page - 1) * limit;
-
-  const [auctions, total] = await Promise.all([
-    Auction.find(query)
-      .populate("owner", "name email")
-      .populate("currentHighestBidder", "name")
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit)),
-    Auction.countDocuments(query)
-  ]);
-
-  return {
-    auctions,
-    pagination: {
-      total,
-      page: parseInt(page),
-      pages: Math.ceil(total / limit),
-      limit: parseInt(limit)
-    }
-  };
+  return await Auction.find(query)
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .populate("owner", "name email");
 };
 
 export const getAuctionById = async (id) => {
@@ -152,5 +175,22 @@ export const cancelAuction = async (id, userId) => {
   }
 
   auction.status = "cancelled";
+  return await auction.save();
+};
+
+export const closeExpiredAuctions = async () => {
+  const now = new Date();
+  await Auction.updateMany(
+    { endTime: { $lte: now }, status: "active" },
+    { status: "closed" }
+  );
+};
+
+export const closeAuction = async (id, userId) => {
+  const auction = await Auction.findById(id);
+
+  if (!auction) throw new Error("Auction not found");
+
+  auction.status = "closed";
   return await auction.save();
 };

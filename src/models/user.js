@@ -72,9 +72,9 @@ const userSchema = new mongoose.Schema(
 );
 
 // Indexes for better query performance
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ accountStatus: 1 });
+// email index is automatically created by unique: true constraint
 
 // Method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword) {
@@ -82,11 +82,14 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 // Pre-save middleware to hash password if modified
-userSchema.pre("save", async function(next) {
-  if (!this.isModified("password")) return next();
-  
+userSchema.pre("save", async function() {
+  // If password is not modified, skip hashing
+  if (!this.isModified("password")) {
+    return;
+  }
+
+  // Hash the password
   this.password = await bcrypt.hash(this.password, 12);
-  next();
 });
 
 export default mongoose.model("User", userSchema);

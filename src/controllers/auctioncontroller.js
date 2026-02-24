@@ -4,7 +4,9 @@ import {
   getAuctionById, 
   updateAuction, 
   deleteAuction,
-  cancelAuction 
+  cancelAuction,
+  closeAuction,
+  closeExpiredAuctions
 } from "../services/auctionservice.js";
 import { validationResult } from "express-validator";
 
@@ -35,25 +37,30 @@ export const createAuctionController = async (req, res) => {
 
 export const getAuctionsController = async (req, res) => {
   try {
-    const { status, category, owner, search, page, limit, sort } = req.query;
-    
-    const filters = { status, category, owner, search };
-    const options = { page, limit, sort };
-    
-    const result = await getAllAuctions(filters, options);
-    
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array()
+      });
+    }
+
+    const { page, limit, status, search } = req.query;
+
+    const auctions = await getAllAuctions(page, limit, status, search);
+
     res.status(200).json({
       success: true,
       message: "Auctions retrieved successfully",
-      data: result.auctions,
-      pagination: result.pagination
+      data: auctions
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: error.message
     });
-  }   
+  }
 };
 
 export const getAuctionByIdController = async (req, res) => {
@@ -139,3 +146,34 @@ export const cancelAuctionController = async (req, res) => {
   }
 };
 
+export const closeAuctionController = async (req, res) => {
+  try {
+    const auction = await closeAuction(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: "Auction closed successfully",
+      data: auction
+    });
+  }catch (error) {
+    const statusCode = error.message.includes("not found") ? 404 : 400;
+    res.status(statusCode).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const closeExpiredAuctionsController = async (req, res) => {
+  try {
+    await closeExpiredAuctions();
+    res.status(200).json({
+      success: true,
+      message: "Expired auctions closed successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

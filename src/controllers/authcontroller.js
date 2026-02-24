@@ -1,18 +1,10 @@
 import { registerUser, loginUser } from "../services/authservices.js";
-import { validationResult } from "express-validator";
 
 export const register = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: errors.array()
-      });
-    }
-
+    console.log("Register called with body:", req.body);
     const user = await registerUser(req.body);
+    console.log("User created:", user);
 
     res.status(201).json({
       success: true,
@@ -20,6 +12,7 @@ export const register = async (req, res) => {
       data: user
     });
   } catch (error) {
+    console.error("Register error:", error);
     const statusCode = error.message.includes("already exists") ? 409 : 400;
     res.status(statusCode).json({
       success: false,
@@ -68,17 +61,10 @@ export const logout = async (req, res) => {
   }
 };
 
-export const getProfile = async (req, res) => {
-  try {
-    res.status(200).json({
-      success: true,
-      message: "Profile retrieved successfully",
-      data: req.user
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
+export const getProfile = (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Profile retrieved successfully",
+    data: req.user
+  });
 };

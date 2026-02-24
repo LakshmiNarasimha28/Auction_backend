@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import authRoutes from "./routes/authroutes.js";
 import auctionRoutes from "./routes/auctionroutes.js";
 import cookieParser from "cookie-parser";
+import bidroutes from "./routes/bidroutes.js";
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.get("/health", (req, res) => {
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/auctions", auctionRoutes);
+app.use("/api/bids", bidroutes);
 
 export default app;
 

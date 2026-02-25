@@ -2,6 +2,7 @@ import Auction from "../models/auction.js";
 import Category from "../models/category.js";
 import { updateCategoryAuctionCount } from "./categoryservice.js";
 import mongoose from "mongoose";
+import Bid from "../models/bid.js";
 
 export const createAuction = async (data, userId) => {
   // Validate category exists and is active
@@ -205,18 +206,20 @@ export const closeExpiredAuctions = async () => {
   );
 };
 
-export const closeAuction = async (id, userId) => {
+export const closeAuction = async (id) => {
   const auction = await Auction.findById(id);
 
   if (!auction) throw new Error("Auction not found");
 
-  auction.status = "closed";
-  await auction.save();
+  const highestBid = await Bid.findOne({ auction: id })
+    .sort({ amount: -1 });
 
-  // Update category auction count
-  if (auction.category) {
-    await updateCategoryAuctionCount(auction.category);
+  if (highestBid) {
+    auction.winner = highestBid.bidder;
   }
 
-  return auction;
+  auction.status = "closed";
+  auction.isCompleted = true;
+
+  return await auction.save();
 };

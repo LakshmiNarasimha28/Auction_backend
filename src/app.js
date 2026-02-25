@@ -7,6 +7,7 @@ import auctionRoutes from "./routes/auctionroutes.js";
 import cookieParser from "cookie-parser";
 import bidroutes from "./routes/bidroutes.js";
 import categoryroutes from "./routes/categoryroutes.js";
+import paymentRoutes from "./routes/paymentroutes.js";
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/auctions", auctionRoutes);
 app.use("/api/bids", bidroutes);
 app.use("/api/categories", categoryroutes);
+app.use("/api/payments", paymentRoutes);
 
 // 404 handler - must be before error handler
 app.use((req, res) => {

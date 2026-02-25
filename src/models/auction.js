@@ -80,6 +80,19 @@ const auctionSchema = new mongoose.Schema(
       default: "active"
     },
 
+    winner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+    isCompleted: {
+      type: Boolean,
+      default: false
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid","failed"],
+      default: "pending"
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

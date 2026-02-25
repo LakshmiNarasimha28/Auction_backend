@@ -2,9 +2,7 @@ import { registerUser, loginUser } from "../services/authservices.js";
 
 export const register = async (req, res) => {
   try {
-    console.log("Register called with body:", req.body);
     const user = await registerUser(req.body);
-    console.log("User created:", user);
 
     res.status(201).json({
       success: true,
@@ -12,7 +10,6 @@ export const register = async (req, res) => {
       data: user
     });
   } catch (error) {
-    console.error("Register error:", error);
     const statusCode = error.message.includes("already exists") ? 409 : 400;
     res.status(statusCode).json({
       success: false,

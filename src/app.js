@@ -19,7 +19,10 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Security middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:3000",
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  maxAge: 86400 // 24 hours
 }));
 app.use(helmet());
 app.use(cookieParser());
@@ -59,11 +62,22 @@ app.use((req, res) => {
 
 // Global error handling middleware - MUST be last
 app.use((err, req, res, next) => {
-  console.error("Error caught:", err);
-  console.error("Error message:", err.message);
+  // Log error details for debugging (in development)
+  if (process.env.NODE_ENV !== "production") {
+    console.error("Error caught:", err);
+    console.error("Error message:", err.message);
+  } else {
+    // In production, log without sensitive details
+    console.error("Error:", err.message);
+  }
+  
   res.status(err.statusCode || 500).json({
     success: false,
-    message: err.message || "Internal server error"
+    message: process.env.NODE_ENV === "production" 
+      ? "Internal server error" 
+      : (err.message || "Internal server error"),
+    // Don't expose error details or stack traces in production
+    ...(process.env.NODE_ENV !== "production" && { details: err.message })
   });
 });
 

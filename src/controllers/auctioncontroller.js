@@ -21,19 +21,19 @@ export const createAuctionController = async (req, res) => {
       });
     }
 
-    // Handle uploaded files
-    // const auctionData = { ...req.body };
-    
-    // if (req.files) {
-    //   if (req.files.images) {
-    //     auctionData.images = req.files.images.map(file => file.path);
-    //   }
-    //   if (req.files.video && req.files.video[0]) {
-    //     auctionData.video = req.files.video[0].path;
-    //   }
-    // }
-    const imageUrls = req.files?.images?.map(file => file.path) || [];
-    const videoUrl = req.files?.video?.[0]?.path || null; 
+    // Extract uploaded file URLs from Cloudinary
+    const imageUrls = [];
+    let videoUrl = null;
+
+    if (req.uploadedFiles) {
+      req.uploadedFiles.forEach((file) => {
+        if (file.type === "image") {
+          imageUrls.push(file.url);
+        } else if (file.type === "video") {
+          videoUrl = file.url;
+        }
+      });
+    }
 
     const auction = await createAuction({
       ...req.body,
@@ -114,12 +114,23 @@ export const updateAuctionController = async (req, res) => {
     // Handle uploaded files
     const updateData = { ...req.body };
     
-    if (req.files) {
-      if (req.files.images) {
-        updateData.images = req.files.images.map(file => file.path);
+    if (req.uploadedFiles && req.uploadedFiles.length > 0) {
+      const imageUrls = [];
+      let videoUrl = null;
+
+      req.uploadedFiles.forEach((file) => {
+        if (file.type === "image") {
+          imageUrls.push(file.url);
+        } else if (file.type === "video") {
+          videoUrl = file.url;
+        }
+      });
+
+      if (imageUrls.length > 0) {
+        updateData.images = imageUrls;
       }
-      if (req.files.video && req.files.video[0]) {
-        updateData.video = req.files.video[0].path;
+      if (videoUrl) {
+        updateData.video = videoUrl;
       }
     }
 

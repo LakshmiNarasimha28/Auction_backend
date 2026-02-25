@@ -7,7 +7,10 @@ import { saveMessage } from "./src/services/chatservice.js";
 
 // Connect to database
 connectDB().catch((error) => {
-  console.error("Database connection failed:", error.message);
+  const errorMsg = process.env.NODE_ENV === "production" 
+    ? "Database connection failed" 
+    : `Database connection failed: ${error.message}`;
+  console.error(errorMsg);
   process.exit(1);
 });
 
@@ -15,20 +18,32 @@ connectDB().catch((error) => {
 try {
   startAuctionCron();
 } catch (error) {
-  console.error("Failed to start auction cron:", error.message);
+  const errorMsg = process.env.NODE_ENV === "production" 
+    ? "Failed to start auction cron job" 
+    : `Failed to start auction cron: ${error.message}`;
+  console.error(errorMsg);
 }
 
 const PORT = process.env.PORT || 5000;
 
 const httpServer = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`Server running on port ${PORT}`);
+  }
 });
 const io = new Server(httpServer, {
-  cors: { origin: "*" }
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  }
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  if (process.env.NODE_ENV !== "production") {
+    console.log("User connected:", socket.id);
+  }
 
   socket.on("joinConversation", (conversationId) => {
     socket.join(conversationId);
@@ -53,18 +68,28 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("User disconnected");
+    }
   });
 });
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
-  console.error("Unhandled rejection:", err);
+  if (process.env.NODE_ENV === "production") {
+    console.error("Unhandled rejection detected - shutting down");
+  } else {
+    console.error("Unhandled rejection:", err);
+  }
   httpServer.close(() => process.exit(1));
 });
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
-  console.error("Uncaught exception:", err);
+  if (process.env.NODE_ENV === "production") {
+    console.error("Uncaught exception detected - shutting down");
+  } else {
+    console.error("Uncaught exception:", err);
+  }
   process.exit(1);
 });

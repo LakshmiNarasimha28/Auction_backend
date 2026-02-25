@@ -12,7 +12,7 @@ import express from "express";
 import { protect } from "../middlewares/authmiddleware.js";
 import { body, param, query } from "express-validator";
 import {authorizeRoles} from "../middlewares/rolemiddleware.js";
-import upload from "../middlewares/uploadmiddleware.js";
+import upload, { uploadToCloudinary } from "../middlewares/uploadmiddleware.js";
 
 const router = express.Router();
 
@@ -134,6 +134,7 @@ router.post(
     { name: "images", maxCount: 10 },
     { name: "video", maxCount: 1 }
   ]),
+  uploadToCloudinary,
   auctionValidation,
   createAuctionController
 );
@@ -151,6 +152,7 @@ router.put(
     { name: "images", maxCount: 10 },
     { name: "video", maxCount: 1 }
   ]),
+  uploadToCloudinary,
   idValidation,
   updateAuctionValidation,
   updateAuctionController

@@ -1,21 +1,13 @@
 import express from "express";
-import { register, login } from "../controllers/authcontroller.js";
-import { body } from "express-validator";
+import { register, login, logout, getProfile } from "../controllers/authcontroller.js";
+import { protect } from "../middlewares/authmiddleware.js";
 
 const router = express.Router();
 
-router.post(
-  "/register",
-  [
-    body("name").notEmpty().withMessage("Name required"),
-    body("email").isEmail().withMessage("Valid email required"),
-    body("password")
-      .isLength({ min: 6 })
-      .withMessage("Password must be at least 6 chars")
-  ],
-  register
-);
-
+// Routes without validation for testing
+router.post("/signup", register);
 router.post("/login", login);
+router.post("/logout", protect, logout);
+router.get("/profile", protect, getProfile);
 
 export default router;

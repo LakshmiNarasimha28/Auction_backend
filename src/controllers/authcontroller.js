@@ -1,17 +1,20 @@
-import { registerUser, loginUser } from "../services/authservice.js";
+import { registerUser, loginUser } from "../services/authservices.js";
 
 export const register = async (req, res) => {
   try {
+    console.log("Register called with body:", req.body);
     const user = await registerUser(req.body);
+    console.log("User created:", user);
 
     res.status(201).json({
       success: true,
       message: "User registered successfully",
       data: user
     });
-
   } catch (error) {
-    res.status(400).json({
+    console.error("Register error:", error);
+    const statusCode = error.message.includes("already exists") ? 409 : 400;
+    res.status(statusCode).json({
       success: false,
       message: error.message
     });
@@ -20,18 +23,48 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const data = await loginUser(req.body);
-
+    const { user, token } = await loginUser(req.body);
+    
+    // Set HTTP-only cookie for token
+    res.cookie("token", token, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === "production", 
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: "strict"
+    });
+    
     res.status(200).json({
       success: true,
       message: "Login successful",
-      data
+      data: { user, token }
     });
-
   } catch (error) {
     res.status(401).json({
       success: false,
       message: error.message
     });
   }
+};
+
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("token");
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const getProfile = (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Profile retrieved successfully",
+    data: req.user
+  });
 };

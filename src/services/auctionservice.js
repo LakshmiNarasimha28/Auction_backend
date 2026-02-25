@@ -128,6 +128,13 @@ export const updateAuction = async (id, data, userId) => {
     throw new Error("Cannot update auction with existing bids");
   }
 
+  // Prevent updating if auction has been active for more than 1 hour
+  const auctionAge = Date.now() - new Date(auction.createdAt).getTime();
+  const oneHourInMs = 60 * 60 * 1000;
+  if (auctionAge > oneHourInMs) {
+    throw new Error("Cannot update auction after 1 hour of creation");
+  }
+
   // Validate end time if being updated
   if (data.endTime && new Date(data.endTime) <= new Date()) {
     throw new Error("End time must be in the future");

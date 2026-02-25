@@ -21,7 +21,25 @@ export const createAuctionController = async (req, res) => {
       });
     }
 
-    const auction = await createAuction(req.body, req.user._id);
+    // Handle uploaded files
+    // const auctionData = { ...req.body };
+    
+    // if (req.files) {
+    //   if (req.files.images) {
+    //     auctionData.images = req.files.images.map(file => file.path);
+    //   }
+    //   if (req.files.video && req.files.video[0]) {
+    //     auctionData.video = req.files.video[0].path;
+    //   }
+    // }
+    const imageUrls = req.files?.images?.map(file => file.path) || [];
+    const videoUrl = req.files?.video?.[0]?.path || null; 
+
+    const auction = await createAuction({
+      ...req.body,
+      images: imageUrls,
+      video: videoUrl
+    }, req.user._id);
     res.status(201).json({
       success: true,
       message: "Auction created successfully",
@@ -93,7 +111,19 @@ export const updateAuctionController = async (req, res) => {
       });
     }
 
-    const auction = await updateAuction(req.params.id, req.body, req.user._id);
+    // Handle uploaded files
+    const updateData = { ...req.body };
+    
+    if (req.files) {
+      if (req.files.images) {
+        updateData.images = req.files.images.map(file => file.path);
+      }
+      if (req.files.video && req.files.video[0]) {
+        updateData.video = req.files.video[0].path;
+      }
+    }
+
+    const auction = await updateAuction(req.params.id, updateData, req.user._id);
     res.status(200).json({
       success: true,
       message: "Auction updated successfully",

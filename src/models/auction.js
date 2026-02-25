@@ -93,6 +93,26 @@ const auctionSchema = new mongoose.Schema(
       enum: ["pending", "paid","failed"],
       default: "pending"
     },
+
+    video: String,
+
+    condition: {
+      type: String,
+      enum: ["new", "used", "refurbished"]
+    },
+
+    location: {
+      type: String,
+      trim: true,
+      maxlength: [200, "Location cannot exceed 200 characters"]
+    },
+
+    specifications: {
+      type: String,
+      trim: true,
+      maxlength: [2000, "Specifications cannot exceed 2000 characters"]
+    },
+
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

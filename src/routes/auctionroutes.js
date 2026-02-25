@@ -12,6 +12,7 @@ import express from "express";
 import { protect } from "../middlewares/authmiddleware.js";
 import { body, param, query } from "express-validator";
 import {authorizeRoles} from "../middlewares/rolemiddleware.js";
+import upload from "../middlewares/uploadmiddleware.js";
 
 const router = express.Router();
 
@@ -48,7 +49,18 @@ const auctionValidation = [
         throw new Error("End time must be in the future");
       }
       return true;
-    })
+    }),
+  body("condition")
+    .optional()
+    .isIn(["new", "used", "refurbished"]).withMessage("Condition must be new, used, or refurbished"),
+  body("location")
+    .optional()
+    .trim()
+    .isLength({ max: 200 }).withMessage("Location cannot exceed 200 characters"),
+  body("specifications")
+    .optional()
+    .trim()
+    .isLength({ max: 2000 }).withMessage("Specifications cannot exceed 2000 characters")
 ];
 
 const updateAuctionValidation = [
@@ -77,7 +89,18 @@ const updateAuctionValidation = [
     .isFloat({ min: 0 }).withMessage("Starting price must be a positive number"),
   body("endTime")
     .optional()
-    .isISO8601().withMessage("Invalid date format")
+    .isISO8601().withMessage("Invalid date format"),
+  body("condition")
+    .optional()
+    .isIn(["new", "used", "refurbished"]).withMessage("Condition must be new, used, or refurbished"),
+  body("location")
+    .optional()
+    .trim()
+    .isLength({ max: 200 }).withMessage("Location cannot exceed 200 characters"),
+  body("specifications")
+    .optional()
+    .trim()
+    .isLength({ max: 2000 }).withMessage("Specifications cannot exceed 2000 characters")
 ];
 
 const idValidation = [
@@ -104,7 +127,16 @@ const getAuctionsValidation = [
 ];
 
 // Routes
-router.post("/", protect, auctionValidation, createAuctionController);
+router.post(
+  "/",
+  protect,
+  upload.fields([
+    { name: "images", maxCount: 10 },
+    { name: "video", maxCount: 1 }
+  ]),
+  auctionValidation,
+  createAuctionController
+);
 router.get("/", getAuctionsValidation, getAuctionsController);
 
 // Admin routes - must come before /:id pattern
@@ -112,7 +144,17 @@ router.patch("/close-expired", protect, authorizeRoles("admin"), closeExpiredAuc
 
 // ID-specific routes
 router.get("/:id", idValidation, getAuctionByIdController);
-router.put("/:id", protect, idValidation, updateAuctionValidation, updateAuctionController);
+router.put(
+  "/:id",
+  protect,
+  upload.fields([
+    { name: "images", maxCount: 10 },
+    { name: "video", maxCount: 1 }
+  ]),
+  idValidation,
+  updateAuctionValidation,
+  updateAuctionController
+);
 router.patch("/:id/cancel", protect, idValidation, cancelAuctionController);
 router.patch("/:id/close", protect, authorizeRoles("admin"), idValidation, closeAuctionController);
 router.delete("/:id", protect, idValidation, deleteAuctionController);

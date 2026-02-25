@@ -20,7 +20,16 @@ const paymentSchema = new mongoose.Schema(
       required: true
     },
 
-    amount: Number,
+    amount: {
+      type: Number,
+      required: true
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: ["online", "direct"],
+      required: true
+    },
 
     razorpayOrderId: String,
     razorpayPaymentId: String,
@@ -28,6 +37,12 @@ const paymentSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["pending", "completed"],
+      default: "pending"
+    },
+
+    confirmationStatus: {
+      type: String,
+      enum: ["pending", "confirmed"],
       default: "pending"
     }
   },

@@ -1,9 +1,7 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import connectDB from "./src/config/db.js";
 import app from "./src/app.js";
 import startAuctionCron from "./src/utils/auctioncron.js";
-
-dotenv.config();
 
 // Connect to database
 connectDB().catch((error) => {

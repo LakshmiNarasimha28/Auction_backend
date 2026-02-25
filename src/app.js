@@ -44,6 +44,52 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Root route - API information
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Auction Platform API",
+    version: "1.0.0",
+    endpoints: {
+      health: "/health",
+      auth: {
+        register: "POST /api/auth/register",
+        login: "POST /api/auth/login",
+        logout: "POST /api/auth/logout",
+        profile: "GET /api/auth/profile"
+      },
+      auctions: {
+        list: "GET /api/auctions",
+        create: "POST /api/auctions",
+        getOne: "GET /api/auctions/:id",
+        update: "PUT /api/auctions/:id",
+        delete: "DELETE /api/auctions/:id"
+      },
+      bids: {
+        list: "GET /api/bids/:auctionId",
+        create: "POST /api/bids",
+        accept: "POST /api/bids/:id/accept"
+      },
+      payments: {
+        createOrder: "POST /api/payments/create-order",
+        verify: "POST /api/payments/verify"
+      },
+      chats: {
+        conversations: "GET /api/chats",
+        messages: "GET /api/chats/:conversationId",
+        create: "POST /api/chats",
+        sendMessage: "POST /api/chats/:conversationId/messages"
+      },
+      categories: {
+        list: "GET /api/categories",
+        create: "POST /api/categories"
+      }
+    },
+    status: "✅ Running",
+    documentation: "See API-REFERENCE.md for detailed documentation"
+  });
+});
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/auctions", auctionRoutes);

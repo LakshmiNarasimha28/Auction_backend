@@ -2,6 +2,8 @@ import "dotenv/config";
 import connectDB from "./src/config/db.js";
 import app from "./src/app.js";
 import startAuctionCron from "./src/utils/auctioncron.js";
+import { Server } from "socket.io";
+import { saveMessage } from "./src/services/chatservice.js";
 
 // Connect to database
 connectDB().catch((error) => {
@@ -18,14 +20,47 @@ try {
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
+const httpServer = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+const io = new Server(httpServer, {
+  cors: { origin: "*" }
+});
+
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("joinConversation", (conversationId) => {
+    socket.join(conversationId);
+  });
+
+  socket.on("sendMessage", async (data) => {
+    const message = await saveMessage(
+      data.conversationId,
+      data.sender,
+      data.text
+    );
+
+    io.to(data.conversationId).emit("receiveMessage", message);
+  });
+
+  socket.on("typing", (conversationId) => {
+    socket.to(conversationId).emit("userTyping");
+  });
+
+  socket.on("stopTyping", (conversationId) => {
+    socket.to(conversationId).emit("userStopTyping");
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
   console.error("Unhandled rejection:", err);
-  server.close(() => process.exit(1));
+  httpServer.close(() => process.exit(1));
 });
 
 // Handle uncaught exceptions

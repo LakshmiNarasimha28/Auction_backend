@@ -14,7 +14,7 @@ export const protect = async (req, res, next) => {
     }
     
     if (!token) {
-        return res.status(401).json({ message: "Unauthorized" });
+        return res.status(401).json({ success: false, message: "Unauthorized" });
     }
     
     try {
@@ -22,6 +22,6 @@ export const protect = async (req, res, next) => {
         req.user = await User.findById(decoded.id).select("-password");
         next();
     } catch (error) {
-        res.status(401).json({ message: "Unauthorized" });
+        res.status(401).json({ success: false, message: "Unauthorized" });
     }
 };

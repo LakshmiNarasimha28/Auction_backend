@@ -7,7 +7,7 @@ export const register = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "User registered successfully",
-      data: user
+      data: { user }
     });
   } catch (error) {
     const statusCode = error.message.includes("already exists") ? 409 : 400;

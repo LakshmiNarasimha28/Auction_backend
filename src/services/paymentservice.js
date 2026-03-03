@@ -1,8 +1,14 @@
 import razorpay from "../config/razorpay.js";
 import Auction from "../models/auction.js";
 import Payment from "../models/payment.js";
+import User from "../models/user.js";
 import crypto from "crypto";
 import mongoose from "mongoose";
+import {
+  sendPaymentSuccessEmail,
+  sendPaymentReceivedEmail,
+  sendDirectPaymentPendingEmail
+} from "./emailservice.js";
 
 export const createPaymentOrder = async (auctionId, userId) => {
   if (!mongoose.Types.ObjectId.isValid(auctionId)) {
@@ -41,7 +47,7 @@ export const verifyPayment = async (data, userId) => {
     throw new Error("Invalid auction ID");
   }
 
-  const auction = await Auction.findById(data.auctionId);
+  const auction = await Auction.findById(data.auctionId).populate("owner");
 
   if (!auction) throw new Error("Auction not found");
 
@@ -64,6 +70,10 @@ export const verifyPayment = async (data, userId) => {
     throw new Error("Payment verification failed");
   }
 
+  // Fetch buyer and seller details
+  const buyer = await User.findById(userId);
+  const seller = auction.owner;
+
   const payment = await Payment.create({
     auction: auction._id,
     buyer: userId,
@@ -78,6 +88,29 @@ export const verifyPayment = async (data, userId) => {
   auction.paymentStatus = "paid";
   await auction.save();
 
+  // Send email notifications (non-blocking)
+  try {
+    // Send success email to buyer
+    await sendPaymentSuccessEmail(
+      buyer.email,
+      buyer.name,
+      auction.title,
+      auction.currentHighestBid
+    );
+
+    // Send received email to seller
+    await sendPaymentReceivedEmail(
+      seller.email,
+      seller.name,
+      auction.title,
+      buyer.name,
+      auction.currentHighestBid
+    );
+  } catch (emailError) {
+    console.error("Error sending payment notification emails:", emailError);
+    // Continue - don't fail the payment if email fails
+  }
+
   return payment;
 };
 
@@ -87,7 +120,7 @@ export const createDirectPayment = async (auctionId, userId) => {
     throw new Error("Invalid auction ID");
   }
 
-  const auction = await Auction.findById(auctionId);
+  const auction = await Auction.findById(auctionId).populate("owner");
 
   if (!auction) throw new Error("Auction not found");
 
@@ -112,6 +145,24 @@ export const createDirectPayment = async (auctionId, userId) => {
     status: "pending"
   });
 
+  // Send email notifications (non-blocking)
+  try {
+    const buyer = await User.findById(userId);
+    const seller = auction.owner;
+
+    // Notify seller about pending direct payment
+    await sendDirectPaymentPendingEmail(
+      seller.email,
+      seller.name,
+      auction.title,
+      buyer.name,
+      auction.currentHighestBid
+    );
+  } catch (emailError) {
+    console.error("Error sending direct payment notification email:", emailError);
+    // Continue - don't fail the payment creation if email fails
+  }
+
   return payment;
 };
 
@@ -121,7 +172,7 @@ export const confirmDirectPayment = async (paymentId, sellerId) => {
     throw new Error("Invalid payment ID");
   }
 
-  const payment = await Payment.findById(paymentId);
+  const payment = await Payment.findById(paymentId).populate("auction").populate("buyer");
 
   if (!payment) throw new Error("Payment not found");
 
@@ -141,6 +192,32 @@ export const confirmDirectPayment = async (paymentId, sellerId) => {
   const auction = await Auction.findById(payment.auction);
   auction.paymentStatus = "paid";
   await auction.save();
+
+  // Send confirmation emails (non-blocking)
+  try {
+    const buyer = payment.buyer;
+    const seller = await User.findById(sellerId);
+
+    // Send success email to buyer
+    await sendPaymentSuccessEmail(
+      buyer.email,
+      buyer.name,
+      auction.title,
+      payment.amount
+    );
+
+    // Send received email to seller (confirmation)
+    await sendPaymentReceivedEmail(
+      seller.email,
+      seller.name,
+      auction.title,
+      buyer.name,
+      payment.amount
+    );
+  } catch (emailError) {
+    console.error("Error sending payment confirmation emails:", emailError);
+    // Continue - don't fail the confirmation if email fails
+  }
 
   return payment;
 };

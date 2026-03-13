@@ -52,6 +52,61 @@ const userSchema = new mongoose.Schema(
         },
         message: "Invalid image URL"
       }
+    },
+
+    // Reputation fields
+    reputation: {
+      overall: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5
+      },
+      buyerRating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5
+      },
+      sellerRating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5
+      }
+    },
+
+    statistics: {
+      totalAuctionsCreated: { type: Number, default: 0 },
+      totalAuctionsWon: { type: Number, default: 0 },
+      totalBidsPlaced: { type: Number, default: 0 },
+      completedTransactions: { type: Number, default: 0 },
+      totalAmountSpent: { type: Number, default: 0 },
+      totalAmountEarned: { type: Number, default: 0 }
+    },
+
+    verification: {
+      emailVerified: {
+        type: Boolean,
+        default: false
+      },
+      phoneVerified: {
+        type: Boolean,
+        default: false
+      },
+      identityVerified: {
+        type: Boolean,
+        default: false
+      },
+      verificationToken: String,
+      verificationExpires: Date
+    },
+
+    preferences: {
+      emailNotifications: { type: Boolean, default: true },
+      pushNotifications: { type: Boolean, default: true },
+      bidReminders: { type: Boolean, default: true },
+      auctionEndings: { type: Boolean, default: true }
     }
   },
   { 

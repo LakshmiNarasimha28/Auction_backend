@@ -113,10 +113,59 @@ const auctionSchema = new mongoose.Schema(
       maxlength: [2000, "Specifications cannot exceed 2000 characters"]
     },
 
-    owner: {
+    seller: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
+    },
+
+    // Advanced auction features
+    reservePrice: {
+      type: Number,
+      min: [0, "Reserve price cannot be negative"],
+      default: 0 // 0 means no reserve price
+    },
+
+    buyNowPrice: {
+      type: Number,
+      min: [0, "Buy now price cannot be negative"],
+      default: null // null means buy-now is disabled
+    },
+
+    autoExtendMinutes: {
+      type: Number,
+      default: 0 // 0 means auto-extend is disabled
+    },
+
+    isAutoExtended: {
+      type: Boolean,
+      default: false
+    },
+
+    views: {
+      type: Number,
+      default: 0
+    },
+
+    favoriteCount: {
+      type: Number,
+      default: 0
+    },
+
+    shippingCost: {
+      type: Number,
+      default: 0
+    },
+
+    shippingMethod: {
+      type: String,
+      enum: ["free", "paid", "local_pickup"],
+      default: "paid"
+    },
+
+    returnPolicy: {
+      allowed: { type: Boolean, default: true },
+      days: { type: Number, default: 7 }
     }
   },
   { 

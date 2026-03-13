@@ -25,3 +25,6 @@ export const protect = async (req, res, next) => {
         res.status(401).json({ success: false, message: "Unauthorized" });
     }
 };
+
+// Export alias for compatibility
+export const authMiddleware = protect;

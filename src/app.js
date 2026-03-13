@@ -9,6 +9,11 @@ import bidroutes from "./routes/bidroutes.js";
 import categoryroutes from "./routes/categoryroutes.js";
 import paymentRoutes from "./routes/paymentroutes.js";
 import chatRoutes from "./routes/chatroutes.js";
+import reviewRoutes from "./routes/reviewroutes.js";
+import wishlistRoutes from "./routes/wishlistroutes.js";
+import notificationRoutes from "./routes/notificationroutes.js";
+import activityRoutes from "./routes/activityroutes.js";
+import searchRoutes from "./routes/searchroutes.js";
 
 const app = express();
 
@@ -97,6 +102,11 @@ app.use("/api/bids", bidroutes);
 app.use("/api/categories", categoryroutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/activity", activityRoutes);
+app.use("/api/search", searchRoutes);
 
 // 404 handler - must be before error handler
 app.use((req, res) => {
